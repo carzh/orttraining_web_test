@@ -4,7 +4,8 @@ const CopyPlugin = require("copy-webpack-plugin");
 module.exports = () => {
 	return {
 		target: ['web'],
-		entry: path.resolve(__dirname, 'index.js'),
+		entry: './index.js',
+		// entry: path.resolve(__dirname, 'index.js'),
 		output: {
 			path: path.resolve(__dirname, 'dist'),
 			filename: 'bundle.min.js',
@@ -15,6 +16,9 @@ module.exports = () => {
 		plugins: [new CopyPlugin({
 			patterns: [{ from: 'node_modules/onnxruntime-web/dist/*.wasm', to: '[name][ext]'}]
 		})],
-		mode: 'production'
+		mode: 'production',
+		resolve: {
+			extensions: ['.ts', '.js'],
+		}
 	}
 };
