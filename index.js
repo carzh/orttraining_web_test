@@ -1,15 +1,22 @@
-const ort = require('onnxruntime-web/training');
+const ort = require('onnxruntime-web');
+// const ort = require('onnxruntime-web/training');
 
-const chkptPath = 'assets/artifacts/mnist/checkpoint.ckpt';
-const trainingPath = 'assets/artifacts/mnist/training_model.onnx';
-const optimizerPath = 'assets/artifacts/mnist/optimizer_model.onnx';
-const evalPath = 'assets/artifacts/mnist/eval_model.onnx';
+// const chkptPath = 'assets/artifacts/mnist/checkpoint.ckpt';
+// const trainingPath = 'assets/artifacts/mnist/training_model.onnx';
+// const optimizerPath = 'assets/artifacts/mnist/optimizer_model.onnx';
+// const evalPath = 'assets/artifacts/mnist/eval_model.onnx';
+
+const chkptPath = 'assets/artifacts/mobilevit/checkpoint.ckpt';
+const trainingPath = 'assets/artifacts/mobilevit/training_model.onnx';
+const optimizerPath = 'assets/artifacts/mobilevit/optimizer_model.onnx';
+const evalPath = 'assets/artifacts/mobilevit/eval_model.onnx';
 
 const dataPath = 'assets/data/train-images.txt';
 const targetPath = 'assets/data/train-labels.txt';
 
 async function main() {
 	try {
+		const is = await ort.InferenceSession.create(trainingPath);
 		const ts = await ort.TrainingSession.create(chkptPath, trainingPath, evalPath, optimizerPath);
 		console.log('the ts inputNames is', ts.inputNames);
 		ts.isTrainingSession();
