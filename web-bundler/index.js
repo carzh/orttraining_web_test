@@ -1,33 +1,43 @@
-const ort = require('onnxruntime-web');
-// const ort = require('onnxruntime-web/training');
+// const ort = require('onnxruntime-web');
+const ort = require('onnxruntime-web/training');
 
-// const chkptPath = 'assets/artifacts/mnist/checkpoint.ckpt';
-// const trainingPath = 'assets/artifacts/mnist/training_model.onnx';
-// const optimizerPath = 'assets/artifacts/mnist/optimizer_model.onnx';
-// const evalPath = 'assets/artifacts/mnist/eval_model.onnx';
+const chkptPath = '/../assets/artifacts/mnist/checkpoint.ckpt';
+const trainingPath = '/../assets/artifacts/mnist/training_model.onnx';
+const optimizerPath = '/../assets/artifacts/mnist/optimizer_model.onnx';
+const evalPath = '/../assets/artifacts/mnist/eval_model.onnx';
 
-const chkptPath = '../assets/artifacts/mobilevit/checkpoint.ckpt';
-const trainingPath = '../assets/artifacts/mobilevit/training_model.onnx';
-const optimizerPath = '../assets/artifacts/mobilevit/optimizer_model.onnx';
-const evalPath = '../assets/artifacts/mobilevit/eval_model.onnx';
+// const chkptPath = '/../assets/artifacts/mobilevit/checkpoint.ckpt';
+// const trainingPath = '/../assets/artifacts/mobilevit/training_model.onnx';
+// const optimizerPath = '/../assets/artifacts/mobilevit/optimizer_model.onnx';
+// const evalPath = '/../assets/artifacts/mobilevit/eval_model.onnx';
 
-const dataPath = '../assets/data/train-images.txt';
-const targetPath = '../assets/data/train-labels.txt';
+const dataPath = 'assets/data/train-images.txt';
+const targetPath = 'assets/data/train-labels.txt';
+
+const allOptions = {
+			checkpointState: chkptPath, 
+			trainModel: trainingPath, 
+			evalModel: evalPath, 
+			optimizerModel: optimizerPath};
+
+const onlyTrainCheckpointOptions = {
+			checkpointState: chkptPath, 
+			trainModel: trainingPath, 
+			evalModel: evalPath, 
+			optimizerModel: optimizerPath};
 
 async function main() {
 	try {
-		const is = await ort.InferenceSession.create(trainingPath);
-		const ts = await ort.TrainingSession.create(chkptPath, trainingPath, evalPath, optimizerPath);
-		console.log('the ts inputNames is', ts.inputNames);
-		ts.isTrainingSession();
-
-		console.log('before loading file');
-		document.write('loading file');
-
 		const targets = await filePathToTensorInt(targetPath);
 		const data = await filePathToTensorFloat(dataPath);
 		console.log('after loading the file and attempting to write');
 		
+		const ts = await ort.TrainingSession.create(onlyTrainCheckpointOptions);
+		console.log('the ts inputNames is', ts.inputNames);
+
+		console.log('before loading file');
+		document.write('loading file');
+
 		const feeds = { "input": data, "labels": targets };
 
 		const results = await ts.runTrainStep(feeds);
@@ -118,6 +128,10 @@ async function filePathToTensorInt(filePath, dims) {
 	}
 	let words = line.split(" ");
 	for (const word of words) {
+		if (word == "NaN") {
+			console.log("continuing after nan found ", word, line);
+			continue;
+		}
 		list.push(BigInt(parseInt(word)));
 	}
 	dim_0 += 1;
