@@ -1,0 +1,20 @@
+{
+  "name": "caros_test_js_proj",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "onnxruntime-common": "file:onnxruntime-common-1.17.0.tgz",
+    "onnxruntime-web": "file:onnxruntime-web-1.17.0.tgz"
+  },
+  "devDependencies": {
+    "copy-webpack-plugin": "^8.1.1",
+    "webpack": "^5.36.2",
+    "webpack-cli": "^4.10.0"
+  }
+}
