@@ -5,7 +5,10 @@ const chkptPath = '/../assets/artifacts/mnist/checkpoint.ckpt';
 const trainingPath = '/../assets/artifacts/mnist/training_model.onnx';
 const optimizerPath = '/../assets/artifacts/mnist/optimizer_model.onnx';
 const evalPath = '/../assets/artifacts/mnist/eval_model.onnx';
+// const inferenceModelPath = './assets/artifacts/inference/model.onnx';
 
+// ort.env.wasm.numThreads = 2;
+// ort.env.wasm.proxy = true;
 // const chkptPath = '/../assets/artifacts/mobilevit/checkpoint.ckpt';
 // const trainingPath = '/../assets/artifacts/mobilevit/training_model.onnx';
 // const optimizerPath = '/../assets/artifacts/mobilevit/optimizer_model.onnx';
@@ -23,14 +26,18 @@ const allOptions = {
 const onlyTrainCheckpointOptions = {
 			checkpointState: chkptPath, 
 			trainModel: trainingPath, 
-			evalModel: evalPath, 
-			optimizerModel: optimizerPath};
+			};
 
 async function main() {
 	try {
 		const targets = await filePathToTensorInt(targetPath);
 		const data = await filePathToTensorFloat(dataPath);
 		console.log('after loading the file and attempting to write');
+		// const is = await ort.InferenceSession.create(inferenceModelPath);
+		// const is2 = await ort.InferenceSession.create(inferenceModelPath);
+
+		// console.log("after loading inference sessions");
+		// document.write("successfully loaded 2 inference sessions");
 		
 		const ts = await ort.TrainingSession.create(onlyTrainCheckpointOptions);
 		console.log('the ts inputNames is', ts.inputNames);
