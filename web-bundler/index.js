@@ -9,7 +9,7 @@ const evalPath = '/../assets/artifacts/mnist/eval_model.onnx';
 
 // ort.env.wasm.numThreads = 2;
 // ort.env.wasm.proxy = true;
-// const chkptPath = '/../assets/artifacts/mobilevit/checkpoint.ckpt';
+// const chkptPathMobilevit = '/../assets/artifacts/mobilevit/checkpoint.ckpt';
 // const trainingPath = '/../assets/artifacts/mobilevit/training_model.onnx';
 // const optimizerPath = '/../assets/artifacts/mobilevit/optimizer_model.onnx';
 // const evalPath = '/../assets/artifacts/mobilevit/eval_model.onnx';
@@ -51,15 +51,43 @@ async function main() {
 		document.write('<br/>');
 		for (const key in results) {
 			document.write(key);
+			document.write(": ");
 			document.write(results[key].data);
 			document.write('<br/>');
 		}
+		const paramsLength = await ts.getParametersSize(true);
+		document.write('<br/>');
+		document.write('<br/>');
+		document.write('parameters length: ');
+		document.write(paramsLength);
+
+		const trainableParams = await ts.getContiguousParameters(true);
+		document.write('<br/>');
+		document.write(trainableParams.data);
+		document.write('<br/>');
+		document.write('<br/>');
+
+		const testFloat = createConstantFloat32Array(3, 2);
+		document.write(testFloat);
+
+		const testFloatOne = createConstantFloat32Array(paramsLength, -1);
+
+		ts.loadParametersBuffer(testFloatOne, true);
+
+		const trainableParamsAfterLoad = await ts.getContiguousParameters(true);
+		document.write('<br/>');
+		document.write('trainable params after load attempt -- should be all 1s');
+		document.write('<br/>');
+		document.write(trainableParamsAfterLoad.data);
+		document.write('<br/>');
+		document.write('<br/>');
+
 		
 		document.write('loading success!!!! whoohooooo~~');
 	} catch (e) {
 		document.write('<br/>:(<br/>');
 		document.write(`FAILURE: ${e}.`);
-		document.write('<br/>:(<br/>');
+		document.write('<br/>:( here is the call stack:<br/>');
 		document.write(e.stack);
 	}
 }
@@ -150,5 +178,15 @@ async function filePathToTensorInt(filePath, dims) {
   
   return new ort.Tensor('int64', fixedFloatArray, dims);
 }
+
+// makes a float32array of the specified length, populated only with the given constant
+function createConstantFloat32Array(length, constant) {
+	const arr = new Float32Array(length);
+
+	for (i = 0; i < length; i++) {
+		arr[i] = constant;
+	}
+	return arr;
+};
 
 main();
