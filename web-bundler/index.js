@@ -39,50 +39,46 @@ async function main() {
 		// console.log("after loading inference sessions");
 		// document.write("successfully loaded 2 inference sessions");
 		
-		const ts = await ort.TrainingSession.create(onlyTrainCheckpointOptions);
+		const ts = await ort.TrainingSession.create(allOptions);
 		console.log('the ts inputNames is', ts.inputNames);
 
 		console.log('before loading file');
 		document.write('loading file');
 
-		const feeds = { "input": data, "labels": targets };
+		let feeds = { "input": data, "labels": targets };
 
-		const results = await ts.runTrainStep(feeds);
+		await runTrainStepAndWriteResults(ts, feeds);
+
+		await runEvalStepAndWriteResults(ts, feeds);
+
+		await writeContiguousParameters(ts);
+		await ts.runOptimizerStep(feeds);
+		document.write("OPTIMIZER STEP HAPPENED;");
+
 		document.write('<br/>');
-		for (const key in results) {
-			document.write(key);
-			document.write(": ");
-			document.write(results[key].data);
-			document.write('<br/>');
-		}
+		await writeContiguousParameters(ts);
+		feeds = { "input": data, "labels": targets };
+		await runEvalStepAndWriteResults(ts, feeds);
+
+		feeds = { "input": data, "labels": targets };
+		await runTrainStepAndWriteResults(ts, feeds);
+		
 		const paramsLength = await ts.getParametersSize(true);
 		document.write('<br/>');
 		document.write('<br/>');
 		document.write('parameters length: ');
 		document.write(paramsLength);
 
-		const trainableParams = await ts.getContiguousParameters(true);
-		document.write('<br/>');
-		document.write(trainableParams.data);
-		document.write('<br/>');
-		document.write('<br/>');
+		const testFloatOne = await createConstantFloat32Array(paramsLength, -1.5);
 
-		const testFloat = createConstantFloat32Array(3, 2);
-		document.write(testFloat);
+		await ts.loadParametersBuffer(testFloatOne, true);
 
-		const testFloatOne = createConstantFloat32Array(paramsLength, -1);
-
-		ts.loadParametersBuffer(testFloatOne, true);
-
-		const trainableParamsAfterLoad = await ts.getContiguousParameters(true);
 		document.write('<br/>');
 		document.write('trainable params after load attempt -- should be all 1s');
-		document.write('<br/>');
-		document.write(trainableParamsAfterLoad.data);
-		document.write('<br/>');
-		document.write('<br/>');
+		await writeContiguousParameters(ts);
 
-		
+		document.write('<br/>');
+		document.write('<br/>');
 		document.write('loading success!!!! whoohooooo~~');
 	} catch (e) {
 		document.write('<br/>:(<br/>');
@@ -90,6 +86,36 @@ async function main() {
 		document.write('<br/>:( here is the call stack:<br/>');
 		document.write(e.stack);
 	}
+}
+
+async function writeResults(results, funcName) {
+		document.write('<br/>');
+		document.write('run ' + funcName + ' results');
+		document.write('<br/>');
+		for (const key in results) {
+			document.write(key);
+			document.write(": ");
+			document.write(results[key].data);
+			document.write('<br/>');
+		}
+}
+
+async function runTrainStepAndWriteResults(ts, feeds) {
+		const results = await ts.runTrainStep(feeds);
+		writeResults(results, 'trainStep');
+}
+
+async function runEvalStepAndWriteResults(ts, feeds) {
+		const results = await ts.runEvalStep(feeds);
+		writeResults(results, 'evalStep');
+}
+
+async function writeContiguousParameters(ts) {
+		const trainableParams = await ts.getContiguousParameters(true);
+		document.write('<br/>');
+		document.write(trainableParams.data);
+		document.write('<br/>');
+		document.write('<br/>');
 }
 
 async function* makeTextFileLineIterator(fileURL) {
