@@ -5,8 +5,15 @@ const chkptPath = '/../assets/artifacts/mnist/checkpoint.ckpt';
 const trainingPath = '/../assets/artifacts/mnist/training_model.onnx';
 const optimizerPath = '/../assets/artifacts/mnist/optimizer_model.onnx';
 const evalPath = '/../assets/artifacts/mnist/eval_model.onnx';
-// const inferenceModelPath = './assets/artifacts/inference/model.onnx';
+const inferenceModelPath = './assets/artifacts/inference/model.onnx';
 
+const chkptPathTrainingApi = '/../assets/artifacts/trainingapi/checkpoint.ckpt';
+const trainingPathTrainingApi  = '/../assets/artifacts/trainingapi/training_model.onnx';
+const optimizerPathTrainingApi  = '/../assets/artifacts/trainingapi/adamw.onnx';
+const evalPathTrainingApi  = '/../assets/artifacts/trainingapi/eval_model.onnx';
+const inferenceModelPathTrainingApi  = './assets/artifacts/inference/model.onnx';
+
+// ort.env.wasm.numThreads = 2;
 // ort.env.wasm.numThreads = 2;
 // ort.env.wasm.proxy = true;
 // const chkptPathMobilevit = '/../assets/artifacts/mobilevit/checkpoint.ckpt';
@@ -23,6 +30,12 @@ const allOptions = {
 			evalModel: evalPath, 
 			optimizerModel: optimizerPath};
 
+const allOptionsTrainingApi = {
+			checkpointState: chkptPathTrainingApi , 
+			trainModel: trainingPathTrainingApi , 
+			evalModel: evalPathTrainingApi , 
+			optimizerModel: optimizerPathTrainingApi };
+
 const onlyTrainCheckpointOptions = {
 			checkpointState: chkptPath, 
 			trainModel: trainingPath, 
@@ -33,19 +46,23 @@ async function main() {
 		const targets = await filePathToTensorInt(targetPath);
 		const data = await filePathToTensorFloat(dataPath);
 		console.log('after loading the file and attempting to write');
-		// const is = await ort.InferenceSession.create(inferenceModelPath);
-		// const is2 = await ort.InferenceSession.create(inferenceModelPath);
+		const is = await ort.InferenceSession.create(inferenceModelPath);
+		const is2 = await ort.InferenceSession.create(inferenceModelPath);
 
-		// console.log("after loading inference sessions");
-		// document.write("successfully loaded 2 inference sessions");
+		console.log("after loading inference sessions");
+		document.write("successfully loaded 2 inference sessions");
+		is.release();
 		
 		const ts = await ort.TrainingSession.create(allOptions);
 		console.log('the ts inputNames is', ts.inputNames);
 
 		console.log('before loading file');
 		document.write('loading file');
+		document.write(data.dims);
 
 		let feeds = { "input": data, "labels": targets };
+
+		await ts.lazyResetGrad();
 
 		await runTrainStepAndWriteResults(ts, feeds);
 
@@ -60,26 +77,51 @@ async function main() {
 		feeds = { "input": data, "labels": targets };
 		await runEvalStepAndWriteResults(ts, feeds);
 
-		feeds = { "input": data, "labels": targets };
+		await ts.lazyResetGrad();
+		// feeds = { "input": data, "labels": targets };
 		await runTrainStepAndWriteResults(ts, feeds);
 		
-		const paramsLength = await ts.getParametersSize(true);
+		const paramsLength = await ts.getParametersSize();
 		document.write('<br/>');
 		document.write('<br/>');
 		document.write('parameters length: ');
 		document.write(paramsLength);
 
-		const testFloatOne = await createConstantFloat32Array(paramsLength, -1.5);
+		const newParamVal = -1.5;
+		const testFloatOne = await createConstantFloat32Array(paramsLength, newParamVal);
+		document.write('<br/>');
+		document.write('float 32 array created');
+		document.write(testFloatOne);
+		document.write('<br/>');
+		const testUintOne = new Uint8Array(testFloatOne.buffer, testFloatOne.byteOffset, testFloatOne.byteLength);
+		document.write('<br/>');
+		document.write('uint 8 array created');
+		document.write(testUintOne);
+		document.write('<br/>');
 
-		await ts.loadParametersBuffer(testFloatOne, true);
+		await ts.loadParametersBuffer(testUintOne);
 
 		document.write('<br/>');
-		document.write('trainable params after load attempt -- should be all 1s');
+		document.write(`trainable params after load attempt -- should be all ${newParamVal}s`);
 		await writeContiguousParameters(ts);
 
+		await ts.release();
+
 		document.write('<br/>');
 		document.write('<br/>');
-		document.write('loading success!!!! whoohooooo~~');
+		document.write('success!!!! whoohooooo~~');
+
+		document.write('<br/>');
+		document.write('<br/>');
+		document.write('TRAINING API TEST ====================================================================');
+		document.write('<br/>');
+		const tsTrainingApi = await ort.TrainingSession.create(allOptionsTrainingApi);
+		const input0 = new ort.Tensor('float32', generateGaussianFloatArray(2 * 784), [2, 784]);
+		const labels = new ort.Tensor('int32', [2, 1], [2]);
+		const feedsTrainingApi = {"input-0": input0, "labels": labels};
+
+		await runTrainStepAndWriteResults(tsTrainingApi, feedsTrainingApi);
+
 	} catch (e) {
 		document.write('<br/>:(<br/>');
 		document.write(`FAILURE: ${e}.`);
@@ -111,9 +153,15 @@ async function runEvalStepAndWriteResults(ts, feeds) {
 }
 
 async function writeContiguousParameters(ts) {
-		const trainableParams = await ts.getContiguousParameters(true);
+		const trainableParams = await ts.getContiguousParameters();
+		document.write('<br/>');
+		document.write('writing contiguous parameters');
 		document.write('<br/>');
 		document.write(trainableParams.data);
+		document.write('<br/>');
+		document.write('is float32:');
+		document.write('<br/>');
+		document.write(trainableParams.data.constructor === Float32Array);
 		document.write('<br/>');
 		document.write('<br/>');
 }
@@ -214,5 +262,23 @@ function createConstantFloat32Array(length, constant) {
 	}
 	return arr;
 };
+
+function generateGaussianRandom(mean=0, scale=1) {
+  const u = 1 - Math.random();
+  const v = Math.random();
+  const z = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+  return z * scale + mean;
+}
+
+function generateGaussianFloatArray(length) {
+  const array = new Float32Array(length);
+
+  for (let i = 0; i < length; i++) {
+    array[i] = generateGaussianRandom();
+  }
+
+  return array;
+}
+
 
 main();
