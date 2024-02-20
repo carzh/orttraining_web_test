@@ -43,9 +43,11 @@ const onlyTrainCheckpointOptions = {
 			trainModel: trainingPath, 
 			};
 
+// async function mainTransformersJS() {
 async function main() {
 	env.backends.onnx.wasm.numThreads = 1;
 	env.allowRemoteModels = true;
+	env.backends.onnx.wasm.wasmPaths = 'dist/';
 
 	const model = 'Xenova/TinyLlama-1.1B-Chat-v1.0';
 	const options = {
@@ -57,13 +59,14 @@ async function main() {
 
 	document.write('before pipeline');
 	document.write('<br/>');
-	pipe = await pipeline('text-generation', model, options);
+	const pipe = await pipeline('text-generation', model, options);
 	document.write('after pipeline is loaded');
 	document.write('<br/>');
 
 }
 
 async function mainForTestingWebFunctions() {
+// async function main() {
 	try {
 		const targets = await filePathToTensorInt(targetPath);
 		const data = await filePathToTensorFloat(dataPath);

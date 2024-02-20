@@ -9,9 +9,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "onnxruntime-common": "file:../onnxruntime-common-1.17.0.tgz",
-    "onnxruntime-web": "file:../onnxruntime-web-1.17.0.tgz",
-    "@xenova/transformers": "file:../xenova-transformers-2.15.0.tgz"
+    "@xenova/transformers": "file:../xenova-transformers-2.15.0.tgz",
+    "onnxruntime-web": "^1.17.0"
   },
   "devDependencies": {
     "copy-webpack-plugin": "^8.1.1",
