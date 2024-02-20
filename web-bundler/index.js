@@ -1,5 +1,7 @@
 // const ort = require('onnxruntime-web');
-const ort = require('onnxruntime-web/training');
+// const ort = require('onnxruntime-web/training');
+import * as ort from 'onnxruntime-web/training';
+import pipeline from '@xenova/transformers';
 
 const chkptPath = '/../assets/artifacts/mnist/checkpoint.ckpt';
 const trainingPath = '/../assets/artifacts/mnist/training_model.onnx';
@@ -42,6 +44,10 @@ const onlyTrainCheckpointOptions = {
 			};
 
 async function main() {
+
+}
+
+async function mainForTestingWebFunctions() {
 	try {
 		const targets = await filePathToTensorInt(targetPath);
 		const data = await filePathToTensorFloat(dataPath);
@@ -62,7 +68,7 @@ async function main() {
 
 		let feeds = { "input": data, "labels": targets };
 
-		await ts.lazyResetGrad();
+		// await ts.lazyResetGrad();
 
 		await runTrainStepAndWriteResults(ts, feeds);
 
@@ -77,7 +83,7 @@ async function main() {
 		feeds = { "input": data, "labels": targets };
 		await runEvalStepAndWriteResults(ts, feeds);
 
-		await ts.lazyResetGrad();
+		// await ts.lazyResetGrad();
 		// feeds = { "input": data, "labels": targets };
 		await runTrainStepAndWriteResults(ts, feeds);
 		
