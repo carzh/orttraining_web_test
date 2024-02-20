@@ -1,7 +1,7 @@
 // const ort = require('onnxruntime-web');
 // const ort = require('onnxruntime-web/training');
 import * as ort from 'onnxruntime-web/training';
-import pipeline from '@xenova/transformers';
+import { env, pipeline } from '@xenova/transformers';
 
 const chkptPath = '/../assets/artifacts/mnist/checkpoint.ckpt';
 const trainingPath = '/../assets/artifacts/mnist/training_model.onnx';
@@ -44,6 +44,22 @@ const onlyTrainCheckpointOptions = {
 			};
 
 async function main() {
+	env.backends.onnx.wasm.numThreads = 1;
+	env.allowRemoteModels = true;
+
+	const model = 'Xenova/TinyLlama-1.1B-Chat-v1.0';
+	const options = {
+		quantized: true,
+		session_options: {
+			executionProviders: ["wasm"]
+		}
+	}
+
+	document.write('before pipeline');
+	document.write('<br/>');
+	pipe = await pipeline('text-generation', model, options);
+	document.write('after pipeline is loaded');
+	document.write('<br/>');
 
 }
 
